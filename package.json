@@ -1,0 +1,24 @@
+{
+  "name": "juridicotech-liceu6",
+  "private": true,
+  "version": "6.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "frontend",
+    "frontend/legal-trading-desk"
+  ],
+  "scripts": {
+    "dev:control-center": "npm --workspace apps/legal-control-center run dev",
+    "build:control-center": "npm --workspace apps/legal-control-center run build",
+    "dev:backend-api": "cd apps/backend-api && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "db:migrate:backend-api": "cd apps/backend-api && alembic upgrade head",
+    "db:autogen:backend-api": "cd apps/backend-api && ./scripts/alembic_autogenerate.sh \"auto_revision\"",
+    "test:backend-api": "cd apps/backend-api && pytest",
+    "lint:backend-api": "cd apps/backend-api && python -m py_compile app/main.py",
+    "dev:legal-worker": "cd apps/legal-worker && uvicorn worker.main:app --reload --host 0.0.0.0 --port 8001",
+    "test:legal-worker": "cd apps/legal-worker && pytest",
+    "docker:up": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f infra/docker/docker-compose.yml down"
+  }
+}

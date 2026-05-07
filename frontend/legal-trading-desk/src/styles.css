@@ -1,0 +1,260 @@
+:root {
+  --bg-0: #06070a;
+  --bg-1: #10131a;
+  --panel: #121723;
+  --panel-soft: #171e2c;
+  --line: #2c3447;
+  --text: #f4f8ff;
+  --muted: #91a0bf;
+  --alert: #f85f45;
+  --high: #ef4444;
+  --medium: #f59e0b;
+  --low: #22c55e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(1200px 650px at 80% -10%, #1c2740 0%, transparent 55%),
+    radial-gradient(900px 450px at -5% 0%, #2e1f1a 0%, transparent 40%),
+    linear-gradient(160deg, var(--bg-0), var(--bg-1));
+}
+
+.desk {
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.desk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.desk-header h1 {
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.desk-header p {
+  margin: 5px 0 0;
+  color: var(--muted);
+}
+
+.status-chip {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+}
+
+.status-chip.online {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.status-chip.offline {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.metric-card {
+  background: linear-gradient(145deg, var(--panel), var(--panel-soft));
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.metric-card span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 28px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr;
+  gap: 12px;
+}
+
+.panel {
+  background: linear-gradient(155deg, rgba(18, 23, 35, 0.9), rgba(23, 30, 44, 0.9));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  min-height: 72vh;
+}
+
+.panel h2 {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.card {
+  width: 100%;
+  text-align: left;
+  color: var(--text);
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.card:hover {
+  border-color: #5f6f93;
+  transform: translateY(-1px);
+}
+
+.card-title {
+  font-weight: 700;
+}
+
+.card-sub {
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.badge {
+  margin-top: 6px;
+  font-size: 12px;
+  display: inline-block;
+  padding: 4px 6px;
+  background: rgba(146, 163, 200, 0.16);
+  border: 1px solid rgba(146, 163, 200, 0.4);
+  border-radius: 6px;
+}
+
+.alert {
+  background: linear-gradient(145deg, rgba(248, 95, 69, 0.2), rgba(248, 95, 69, 0.07));
+  border: 1px solid rgba(248, 95, 69, 0.45);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  padding: 10px;
+}
+
+.alert-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ffbaaa;
+  margin-bottom: 4px;
+}
+
+.alert-meta {
+  margin-top: 6px;
+  color: #ffd1c8;
+  font-size: 13px;
+}
+
+.risk {
+  border-radius: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  margin-bottom: 8px;
+}
+
+.risk.high {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.risk.medium {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.risk.low {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.risk-head {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.decision {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.risk-body {
+  margin-top: 6px;
+  color: #f3f5fa;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 5, 11, 0.65);
+  display: grid;
+  place-items: center;
+}
+
+.modal {
+  width: min(820px, 90vw);
+  background: #070a12;
+  border: 1px solid #3f4b66;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.modal pre {
+  max-height: 50vh;
+  overflow: auto;
+  background: #0f1626;
+  border: 1px solid #2f3c58;
+  padding: 12px;
+}
+
+.close-btn {
+  border: 1px solid #3f4b66;
+  background: transparent;
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+@media (max-width: 1080px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    min-height: auto;
+  }
+
+  .metrics-row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,1 @@
+"""JURIDICO-TECH application package."""

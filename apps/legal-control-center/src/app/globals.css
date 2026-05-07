@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+/* ─── JURÍDICO.TECH — Design System ─────────────────────────────────────── */
+
+:root {
+  --color-void:        #080b12;
+  --color-surface:     #0d1117;
+  --color-surface-2:   #111827;
+  --color-surface-3:   #1a2235;
+  --color-border:      rgba(255,255,255,0.07);
+  --color-blue:        #3b82f6;
+  --color-blue-glow:   #2563eb;
+  --color-amber:       #f59e0b;
+  --color-green:       #10b981;
+  --color-red:         #ef4444;
+  --color-teal:        #0d9488;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --glass-bg:     rgba(13,17,23,0.8);
+  --glass-border: 1px solid rgba(255,255,255,0.07);
+  --shadow-glow:  0 0 24px rgba(59,130,246,0.15);
+}
+
+::-webkit-scrollbar        { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: var(--color-surface); }
+::-webkit-scrollbar-thumb  { background: var(--color-surface-3); border-radius: 2px; }
+
+.glass {
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+  70%  { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+  100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.text-glow-blue  { text-shadow: 0 0 20px rgba(59,130,246,0.6); }
+.text-glow-amber { text-shadow: 0 0 20px rgba(245,158,11,0.6); }
+.text-glow-green { text-shadow: 0 0 20px rgba(16,185,129,0.6); }
+.text-glow-red   { text-shadow: 0 0 20px rgba(239,68,68,0.8); }
+
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+.blink { animation: blink 1s step-end infinite; }
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
