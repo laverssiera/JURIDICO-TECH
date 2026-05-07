@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.arbitration.router import router as arbitration_router
+from app.auth.router import router as auth_router
 from app.compliance.router import router as compliance_router
 from app.contracts.router import router as contract_router
 from app.db.migrations import run_migrations_async
@@ -17,13 +18,13 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     try:
         await run_migrations_async()
     except Exception:
-        # Fallback para ambientes sem tooling Alembic completo.
         await init_models()
     yield
 
 app = FastAPI(title="JURIDICOTECH", version="6.0.0", lifespan=lifespan)
 app.add_middleware(TenantMiddleware)
 
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(contract_router, prefix="/contracts", tags=["contracts"])
 app.include_router(arbitration_router, prefix="/arbitration", tags=["arbitration"])
 app.include_router(compliance_router, prefix="/compliance", tags=["compliance"])
