@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   FileText, Plus, Search, Filter, Bot, Shield, GitBranch,
@@ -7,6 +7,7 @@ import {
   PenLine, Zap, BarChart2, BookOpen, ExternalLink,
 } from "lucide-react";
 import { Badge, Card, KpiCard, RiskBadge, SectionHeader } from "@/components/ui";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { RiskLevel } from "@/components/ui";
 
@@ -61,8 +62,64 @@ const CLAUSE_FLAGS = [
 ];
 
 export default function ContratosPage() {
+  const [contracts, setContracts] = useState<Contract[]>(CONTRACTS);
   const [selected, setSelected] = useState<Contract | null>(CONTRACTS[0]);
   const [activeTab, setActiveTab] = useState<"editor" | "clausulas" | "historico" | "assinatura">("editor");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    type ContractListApi = {
+      total: number;
+      items: Array<{
+        contract_id: string;
+        title: string;
+        contract_type: string;
+        status: string;
+        risk_score: number;
+        created_at: string;
+      }>;
+    };
+
+    const mapRisk = (score: number): RiskLevel => {
+      if (score >= 80) return "verde";
+      if (score >= 60) return "amarelo";
+      if (score >= 40) return "vermelho";
+      return "preto";
+    };
+
+    const loadContracts = async () => {
+      try {
+        const data = await api.get<ContractListApi>("/contracts/");
+        if (cancelled || !data.items.length) return;
+
+        const normalized: Contract[] = data.items.map((item) => ({
+          id: item.contract_id,
+          title: item.title,
+          parties: ["Contratante", "Contratada"],
+          value: "N/A",
+          status: item.status === "active" ? "active" : item.status === "draft" ? "draft" : "review_ai",
+          risk: mapRisk(item.risk_score),
+          riskScore: Math.round(item.risk_score),
+          version: 1,
+          signed: item.status === "active",
+          expires: "—",
+          clauses: 0,
+          flags: [item.contract_type],
+        }));
+
+        setContracts(normalized);
+        setSelected(normalized[0]);
+      } catch {
+        // fallback: mantém dados mock locais
+      }
+    };
+
+    loadContracts();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="p-6 h-full flex flex-col gap-5">
@@ -104,7 +161,7 @@ export default function ContratosPage() {
           </div>
 
           <div className="space-y-2 overflow-y-auto flex-1">
-            {CONTRACTS.map(c => {
+            {contracts.map(c => {
               const st = STATUS_CFG[c.status];
               return (
                 <motion.button

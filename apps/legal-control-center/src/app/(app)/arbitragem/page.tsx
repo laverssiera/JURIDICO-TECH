@@ -1,9 +1,11 @@
 "use client";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Scale, Calendar, Users, FileText, Clock, Globe, TrendingUp,
   CheckCircle, AlertTriangle, MessageSquare, Download, Gavel,
 } from "lucide-react";
+import { api } from "@/lib/api";
 import { Card, KpiCard, Badge, RiskBadge } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import type { RiskLevel } from "@/components/ui";
@@ -24,6 +26,106 @@ const TIMELINE = [
 ];
 
 export default function ArbitragemPage() {
+  type ArbitrationEvent = {
+    id: string;
+    case_id: string;
+    event_type: string;
+    description: string;
+    created_at: string;
+  };
+  type ArbitrationCaseApi = {
+    id: string;
+    case_number: string;
+    title: string;
+    status: string;
+    parties_json: string;
+    award_amount: number | null;
+    created_at: string;
+    events: ArbitrationEvent[];
+  };
+
+  const [cases, setCases] = useState(CASES);
+  const [selectedId, setSelectedId] = useState<string>(CASES[0].id);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const mapRisk = (status: string): RiskLevel => {
+      if (status === "open") return "vermelho";
+      if (status === "hearing") return "amarelo";
+      if (status === "award" || status === "closed") return "verde";
+      return "amarelo";
+    };
+
+    const mapStatusLabel = (status: string) => {
+      if (status === "open") return "Audiência";
+      if (status === "hearing") return "Instrução";
+      if (status === "award") return "Sentence";
+      if (status === "closed") return "Concluído";
+      return "Mediação";
+    };
+
+    const mapFase = (status: string) => {
+      if (status === "open") return "Instalação";
+      if (status === "hearing") return "Instrução";
+      if (status === "award") return "Sentença";
+      if (status === "closed") return "Pós-Laudo";
+      return "Mediação";
+    };
+
+    const load = async () => {
+      try {
+        const data = await api.get<{ total: number; items: ArbitrationCaseApi[] }>("/arbitration/");
+        if (cancelled || !data.items.length) return;
+
+        const normalized = data.items.map((c) => ({
+          id: c.id,
+          title: c.title,
+          camara: "Arbitragem LICEU",
+          valor: c.award_amount ? `R$ ${Math.round(c.award_amount).toLocaleString("pt-BR")}` : "N/A",
+          status: mapStatusLabel(c.status),
+          risk: mapRisk(c.status),
+          data: new Date(c.created_at).toLocaleDateString("pt-BR"),
+          fase: mapFase(c.status),
+          events: c.events,
+        }));
+
+        setCases(normalized);
+        setSelectedId(normalized[0].id);
+      } catch {
+        // fallback mock
+      }
+    };
+
+    load();
+    const id = setInterval(load, 12000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  const selectedCase = useMemo(() => cases.find((c) => c.id === selectedId) ?? cases[0], [cases, selectedId]);
+
+  const timelineDynamic = useMemo(() => {
+    const events = (selectedCase as { events?: ArbitrationEvent[] } | undefined)?.events ?? [];
+    if (!events.length) return TIMELINE;
+
+    const ordered = [...events].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    return ordered.slice(-5).map((e, idx) => ({
+      fase: e.event_type.replace(/_/g, " ").toUpperCase(),
+      desc: e.description,
+      done: idx < ordered.length - 1,
+      current: idx === ordered.length - 1,
+    }));
+  }, [selectedCase]);
+
+  const activeCases = cases.length;
+  const totalDispute = cases.reduce((acc, c) => {
+    const numeric = Number(String(c.valor).replace(/[^\d]/g, ""));
+    return acc + (Number.isFinite(numeric) ? numeric : 0);
+  }, 0);
+
   return (
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between">
@@ -38,18 +140,18 @@ export default function ArbitragemPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <KpiCard label="Casos Ativos"       value={12}      trend="up"     color="amber" />
-        <KpiCard label="Valor em Disputa"   value="R$ 89M"  trend="stable" color="red" />
-        <KpiCard label="Câmaras"            value={5}       trend="stable" color="blue" />
-        <KpiCard label="Laudos Favoráveis"  value="78%"     trend="up"     color="green" />
+        <KpiCard label="Casos Ativos"       value={activeCases} trend="up"     color="amber" />
+        <KpiCard label="Valor em Disputa"   value={`R$ ${Math.round(totalDispute / 1_000_000)}M`} trend="stable" color="red" />
+        <KpiCard label="Câmaras"            value={1} trend="stable" color="blue" />
+        <KpiCard label="Laudos Favoráveis"  value={activeCases ? `${Math.round((cases.filter((c) => c.status === "Sentence" || c.status === "Concluído").length / activeCases) * 100)}%` : "0%"} trend="up" color="green" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         {/* Cases */}
         <div className="xl:col-span-2 space-y-3">
-          {CASES.map((c, i) => (
+          {cases.map((c, i) => (
             <motion.div key={c.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}>
-              <Card>
+              <Card className={cn(selectedId === c.id ? "border-amber-500/40" : "")}> 
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -73,6 +175,12 @@ export default function ArbitragemPage() {
                     )}>
                       {c.status}
                     </span>
+                    <button
+                      onClick={() => setSelectedId(c.id)}
+                      className="text-[9px] font-mono text-blue-400 hover:text-blue-300"
+                    >
+                      Ver timeline
+                    </button>
                   </div>
                 </div>
               </Card>
@@ -88,7 +196,7 @@ export default function ArbitragemPage() {
               <span className="text-xs font-mono font-semibold text-white">FASES ARBITRAIS</span>
             </div>
             <div className="space-y-3">
-              {TIMELINE.map((t, i) => (
+              {timelineDynamic.map((t, i) => (
                 <div key={t.fase} className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div className={cn("w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0",

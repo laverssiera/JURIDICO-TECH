@@ -33,6 +33,13 @@ class OutboxRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def list_events(self, limit: int = 100, status: str | None = None) -> list[LegalEventOutbox]:
+        stmt = select(LegalEventOutbox).order_by(LegalEventOutbox.created_at.desc()).limit(limit)
+        if status:
+            stmt = stmt.where(LegalEventOutbox.status == status)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def mark_published(self, event: LegalEventOutbox) -> None:
         event.status = "published"
         event.attempts += 1

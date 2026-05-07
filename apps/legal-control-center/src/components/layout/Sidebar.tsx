@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, FileText, Search, Siren, Leaf, ClipboardCheck,
   Kanban, Users, Building2, GraduationCap, Store, BarChart3,
-  Shield, Settings, ChevronLeft, ChevronRight, Scale,
+  Shield, Settings, ChevronLeft, ChevronRight, Scale, ScrollText,
 } from "lucide-react";
 import { useLegalStore } from "@/store/legal";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,7 @@ const NAV = [
   { label: "ESG & Compliance", href: "/esg",                   icon: Leaf },
   { label: "Compliance",       href: "/compliance",            icon: ClipboardCheck },
   { label: "Arbitragem",       href: "/arbitragem",            icon: Scale },
+  { label: "Auditoria",        href: "/auditoria",             icon: ScrollText },
   { label: "Marketplace",      href: "/marketplace",           icon: Store },
   { label: "Portal Cliente",   href: "/portal-cliente",        icon: Users },
   { label: "Portal Fornecedor",href: "/portal-fornecedor",     icon: Building2 },

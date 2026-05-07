@@ -3,10 +3,12 @@ import { useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import JohnCopilot from "@/components/JohnCopilot";
+import { useBackendHealth } from "@/hooks/useBackendHealth";
 import { useEventStream } from "@/hooks/useEventStream";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEventStream();
+  useBackendHealth();
   const [johnOpen, setJohnOpen] = useState(false);
 
   return (

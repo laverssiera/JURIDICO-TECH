@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.arbitration.router import router as arbitration_router
 from app.auth.router import router as auth_router
@@ -22,6 +23,18 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     yield
 
 app = FastAPI(title="JURIDICOTECH", version="6.0.0", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.add_middleware(TenantMiddleware)
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])

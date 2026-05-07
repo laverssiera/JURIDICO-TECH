@@ -5,6 +5,7 @@ import {
   Bot, X, Send, Sparkles, BookOpen, Scale, FileText,
   AlertTriangle, RefreshCw, ChevronDown, Mic,
 } from "lucide-react";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -74,6 +75,21 @@ export default function JohnCopilot({ open, onClose }: JohnCopilotProps) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  async function publishJohnEvent(text: string, answer: string) {
+    try {
+      await api.post("/events/war-room/actions", {
+        action: "john_legal_query",
+        source: "john_copilot",
+        metadata: {
+          query: text,
+          response_preview: answer.slice(0, 220),
+        },
+      });
+    } catch {
+      // silent fallback to keep chat UX responsive
+    }
+  }
+
   function send(query?: string) {
     const text = query ?? input.trim();
     if (!text || loading) return;
@@ -89,16 +105,18 @@ export default function JohnCopilot({ open, onClose }: JohnCopilotProps) {
     setMessages(prev => [...prev, userMsg]);
     setLoading(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
+      const answer = getJohnResponse(text);
       const johnMsg: Message = {
         id: crypto.randomUUID(),
         role: "john",
-        content: getJohnResponse(text),
+        content: answer,
         ts: new Date().toLocaleTimeString("pt-BR"),
         type: "recommendation",
       };
       setMessages(prev => [...prev, johnMsg]);
       setLoading(false);
+      await publishJohnEvent(text, answer);
     }, 1200);
   }
 

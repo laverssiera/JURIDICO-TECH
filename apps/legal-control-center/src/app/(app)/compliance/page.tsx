@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Shield, CheckCircle, AlertTriangle, Clock, FileText,
@@ -8,6 +9,7 @@ import {
   BarChart, Bar, XAxis, Tooltip, ResponsiveContainer,
   RadialBarChart, RadialBar,
 } from "recharts";
+import { api } from "@/lib/api";
 import { Card, KpiCard, Badge, RiskBadge } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import type { RiskLevel } from "@/components/ui";
@@ -44,7 +46,98 @@ const AUDIT_LOG = [
 ];
 
 export default function CompliancePage() {
-  const overall = 94;
+  type ComplianceAlert = {
+    id: string;
+    alert_type: string;
+    severity: "low" | "medium" | "high" | "critical";
+    message: string;
+    created_at: string;
+  };
+  type ComplianceCheck = {
+    id: string;
+    scope: string;
+    score: number;
+    status: string;
+    created_at: string;
+  };
+
+  const [checks, setChecks] = useState<ComplianceCheck[]>([]);
+  const [alerts, setAlerts] = useState<ComplianceAlert[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const [checksResp, alertsResp] = await Promise.all([
+          api.get<{ items: ComplianceCheck[] }>("/compliance/checks"),
+          api.get<ComplianceAlert[]>("/compliance/alerts/open"),
+        ]);
+        if (cancelled) return;
+        setChecks(checksResp.items ?? []);
+        setAlerts(alertsResp ?? []);
+      } catch {
+        // fallback: mantém mocks da tela
+      }
+    };
+
+    load();
+    const id = setInterval(load, 12000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  const overall = useMemo(() => {
+    if (!checks.length) return 94;
+    return Math.round(checks.reduce((acc, c) => acc + c.score, 0) / checks.length);
+  }, [checks]);
+
+  const frameworksDynamic = useMemo(() => {
+    if (!checks.length) return FRAMEWORKS;
+    const byScope = new Map<string, { total: number; sum: number }>();
+    for (const c of checks) {
+      const curr = byScope.get(c.scope) ?? { total: 0, sum: 0 };
+      curr.total += 1;
+      curr.sum += c.score;
+      byScope.set(c.scope, curr);
+    }
+    return Array.from(byScope.entries()).map(([scope, v]) => {
+      const score = Math.round(v.sum / v.total);
+      return {
+        name: scope.toUpperCase(),
+        score,
+        status: score >= 85 ? "OK" : score >= 70 ? "ALERTA" : "PENDENTE",
+        expires: "—",
+      };
+    });
+  }, [checks]);
+
+  const risksDynamic = useMemo(() => {
+    if (!alerts.length) return RISKS;
+    const grouped = new Map<string, number>();
+    for (const a of alerts) grouped.set(a.alert_type, (grouped.get(a.alert_type) ?? 0) + 1);
+    return Array.from(grouped.entries()).map(([area, n]) => ({
+      area: area.replace(/_/g, " "),
+      n,
+      risk: n >= 8 ? "vermelho" : n >= 4 ? "amarelo" : "verde",
+    })) as Array<{ area: string; n: number; risk: RiskLevel }>;
+  }, [alerts]);
+
+  const auditDynamic = useMemo(() => {
+    if (!alerts.length) return AUDIT_LOG;
+    return alerts.slice(0, 5).map((a) => ({
+      ts: new Date(a.created_at).toLocaleTimeString("pt-BR"),
+      action: a.message,
+      user: a.alert_type.toUpperCase(),
+      ok: a.severity === "low" || a.severity === "medium",
+    }));
+  }, [alerts]);
+
+  const pendingCount = alerts.length;
+  const criticalCount = alerts.filter((a) => a.severity === "critical" || a.severity === "high").length;
+  const frameworksOk = frameworksDynamic.filter((f) => f.status === "OK").length;
 
   return (
     <div className="p-6 space-y-5">
@@ -60,10 +153,10 @@ export default function CompliancePage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <KpiCard label="Score Global"       value="94%"  trend="up"     color="green" />
-        <KpiCard label="Frameworks OK"      value={6}    trend="stable" color="green" />
-        <KpiCard label="Pendências"         value={3}    trend="down"   color="amber" />
-        <KpiCard label="Alertas Críticos"   value={1}    trend="down"   color="red" />
+        <KpiCard label="Score Global"       value={`${overall}%`} trend="up"     color="green" />
+        <KpiCard label="Frameworks OK"      value={frameworksOk} trend="stable" color="green" />
+        <KpiCard label="Pendências"         value={pendingCount} trend="down"   color="amber" />
+        <KpiCard label="Alertas Críticos"   value={criticalCount} trend="down"   color="red" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
@@ -95,7 +188,7 @@ export default function CompliancePage() {
               <span className="text-xs font-mono font-semibold text-white">FRAMEWORKS & NORMAS</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {FRAMEWORKS.map((f, i) => (
+              {frameworksDynamic.map((f, i) => (
                 <motion.div key={f.name} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
                   className="flex items-center gap-3 p-2.5 glass rounded-lg border border-white/5">
                   <div className="flex-1 min-w-0">
@@ -132,7 +225,7 @@ export default function CompliancePage() {
             <span className="text-xs font-mono font-semibold text-white">RISCOS POR ÁREA</span>
           </div>
           <div className="space-y-2">
-            {RISKS.map(r => (
+            {risksDynamic.map(r => (
               <div key={r.area} className="flex items-center gap-3">
                 <span className="text-[10px] font-mono text-slate-500 w-20">{r.area}</span>
                 <div className="flex-1 bg-white/5 rounded-full h-2">
@@ -156,7 +249,7 @@ export default function CompliancePage() {
               <Badge variant="amber">Blockchain</Badge>
             </div>
             <div className="space-y-2">
-              {AUDIT_LOG.map((log, i) => (
+              {auditDynamic.map((log, i) => (
                 <div key={i} className="flex items-center gap-3 p-2.5 glass rounded-lg border border-white/5">
                   {log.ok ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />}
                   <div className="flex-1">

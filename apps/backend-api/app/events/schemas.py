@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class OutboxEventResponse(BaseModel):
     id: str
     subject: str
+    payload_json: str
     status: str
     attempts: int
     created_at: datetime
@@ -22,3 +23,16 @@ class OutboxFlushResponse(BaseModel):
     scanned: int
     published: int
     pending: int
+
+
+class WarRoomActionRequest(BaseModel):
+    action: str
+    source: str = "war_room"
+    incident_id: str | None = None
+    metadata: dict = {}
+
+
+class WarRoomActionResponse(BaseModel):
+    status: str
+    event_id: str
+    subject: str

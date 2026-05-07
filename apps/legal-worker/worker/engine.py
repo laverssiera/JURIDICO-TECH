@@ -63,7 +63,7 @@ class WorkerEngine:
 
     async def _cycle(self) -> None:
         async with self._session_factory() as session:
-            from sqlalchemy import select, update  # local import to keep module light
+            from sqlalchemy import select  # local import to keep module light
 
             # Import the shared model from backend-api DB — we connect to same DB
             # so we declare a minimal inline table mapping here to avoid coupling.
@@ -83,8 +83,11 @@ class WorkerEngine:
             for row in rows:
                 # Exponential backoff: skip if not yet ready for retry
                 if row.attempts > 0 and row.last_error:
+                    created_at = row.created_at
+                    if created_at.tzinfo is None:
+                        created_at = created_at.replace(tzinfo=UTC)
                     delay = settings.backoff_base ** row.attempts
-                    ready_at = row.created_at + timedelta(seconds=delay)
+                    ready_at = created_at + timedelta(seconds=delay)
                     if datetime.now(UTC) < ready_at:
                         continue
 

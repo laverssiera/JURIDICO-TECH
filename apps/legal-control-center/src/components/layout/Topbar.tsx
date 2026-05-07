@@ -3,7 +3,7 @@ import { Bell, Wifi, WifiOff, Bot } from "lucide-react";
 import { useLegalStore } from "@/store/legal";
 
 export default function Topbar({ title, onJohnOpen }: { title?: string; onJohnOpen?: () => void }) {
-  const { wsStatus, events } = useLegalStore();
+  const { wsStatus, apiStatus, events } = useLegalStore();
 
   return (
     <header className="h-12 flex items-center justify-between px-5 border-b border-white/5 bg-[#0d1117] shrink-0">
@@ -15,6 +15,19 @@ export default function Topbar({ title, onJohnOpen }: { title?: string; onJohnOp
       </div>
 
       <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-mono text-slate-500">API</span>
+          <span className={`text-xs font-mono ${
+            apiStatus === "online"
+              ? "text-emerald-400"
+              : apiStatus === "offline"
+                ? "text-red-400"
+                : "text-amber-400"
+          }`}>
+            {apiStatus.toUpperCase()}
+          </span>
+        </div>
+
         {/* WS status */}
         <div className="flex items-center gap-1.5">
           {wsStatus === "connected" ? (

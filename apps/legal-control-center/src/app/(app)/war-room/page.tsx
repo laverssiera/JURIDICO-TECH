@@ -1,11 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Siren, AlertTriangle, Radio, Clock, Globe, Users, Bot,
   Video, MessageSquare, FileText, Map, Activity, Zap,
   Shield, PhoneCall, SendHorizontal, XCircle, AlertCircle,
 } from "lucide-react";
+import { api } from "@/lib/api";
 import { Card, Badge, RiskBadge } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import type { RiskLevel } from "@/components/ui";
@@ -83,10 +84,138 @@ const TEAM = [
 const STATUS_DOT = { online: "bg-emerald-400", busy: "bg-amber-400 animate-pulse", offline: "bg-slate-600" };
 
 export default function WarRoomPage() {
+  type ComplianceAlert = {
+    id: string;
+    alert_type: string;
+    severity: "low" | "medium" | "high" | "critical";
+    message: string;
+    created_at: string;
+  };
+  type ArbitrationCaseApi = {
+    id: string;
+    title: string;
+    status: string;
+    created_at: string;
+    events: Array<{ created_at: string; description: string; event_type: string }>;
+  };
+
+  const [incidents, setIncidents] = useState(INCIDENTS);
   const [selected, setSelected] = useState(INCIDENTS[0]);
   const [msg, setMsg] = useState("");
+  const [sending, setSending] = useState(false);
 
-  const criticalCount = INCIDENTS.filter(i => i.severity === "preto" || i.severity === "vermelho").length;
+  useEffect(() => {
+    let cancelled = false;
+
+    const mapSeverity = (s: string): RiskLevel => {
+      if (s === "critical") return "preto";
+      if (s === "high") return "vermelho";
+      if (s === "medium") return "amarelo";
+      return "verde";
+    };
+
+    const toIncidentType = (t: string): Incident["type"] => {
+      if (t.includes("ambient")) return "ambiental";
+      if (t.includes("labor")) return "acidente";
+      if (t.includes("regulatory") || t.includes("tax")) return "judicial";
+      return "embargo";
+    };
+
+    const load = async () => {
+      try {
+        const [alerts, arbitrations] = await Promise.all([
+          api.get<ComplianceAlert[]>("/compliance/alerts/open"),
+          api.get<{ items: ArbitrationCaseApi[] }>("/arbitration/"),
+        ]);
+        if (cancelled) return;
+
+        const fromAlerts: Incident[] = alerts.slice(0, 6).map((a, idx) => ({
+          id: `ALT-${idx + 1}`,
+          title: a.message,
+          type: toIncidentType(a.alert_type),
+          severity: mapSeverity(a.severity),
+          started: new Date(a.created_at).toLocaleString("pt-BR"),
+          status: a.severity === "critical" || a.severity === "high" ? "ativo" : "contido",
+          updates: [
+            { ts: new Date(a.created_at).toLocaleTimeString("pt-BR"), msg: a.message, user: "Compliance Engine" },
+            { ts: new Date().toLocaleTimeString("pt-BR"), msg: "Triagem automática no War Room", user: "Sistema" },
+          ],
+        }));
+
+        const fromArbitration: Incident[] = arbitrations.items
+          .filter((c) => c.status === "open" || c.status === "hearing")
+          .slice(0, 4)
+          .map((c, idx) => ({
+            id: `ARB-${idx + 1}`,
+            title: c.title,
+            type: "judicial",
+            severity: c.status === "open" ? "vermelho" : "amarelo",
+            started: new Date(c.created_at).toLocaleString("pt-BR"),
+            status: c.status === "open" ? "ativo" : "contido",
+            updates: c.events.slice(-4).map((e) => ({
+              ts: new Date(e.created_at).toLocaleTimeString("pt-BR"),
+              msg: e.description,
+              user: e.event_type.replace(/_/g, " "),
+            })),
+          }));
+
+        const merged = [...fromAlerts, ...fromArbitration];
+        if (merged.length) {
+          setIncidents(merged);
+          setSelected(merged[0]);
+        }
+      } catch {
+        // fallback mock
+      }
+    };
+
+    load();
+    const id = setInterval(load, 12000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  const criticalCount = useMemo(
+    () => incidents.filter((i) => i.severity === "preto" || i.severity === "vermelho").length,
+    [incidents],
+  );
+
+  const pushUpdate = (incidentId: string, text: string, user = "Operador") => {
+    const update = { ts: new Date().toLocaleTimeString("pt-BR"), msg: text, user };
+    setIncidents((prev) =>
+      prev.map((inc) => (inc.id === incidentId ? { ...inc, updates: [...inc.updates, update] } : inc)),
+    );
+    if (selected.id === incidentId) {
+      setSelected((prev) => ({ ...prev, updates: [...prev.updates, update] }));
+    }
+  };
+
+  const publishAction = async (action: string, metadata: Record<string, unknown> = {}) => {
+    try {
+      setSending(true);
+      await api.post("/events/war-room/actions", {
+        action,
+        source: "war_room_ui",
+        incident_id: selected.id,
+        metadata,
+      });
+      pushUpdate(selected.id, `Acao registrada: ${action}`, "Sistema");
+    } catch {
+      pushUpdate(selected.id, `Falha ao registrar acao: ${action}`, "Sistema");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const submitManualUpdate = async () => {
+    const note = msg.trim();
+    if (!note || sending) return;
+    setMsg("");
+    pushUpdate(selected.id, note, "Operador");
+    await publishAction("manual_update", { note });
+  };
 
   return (
     <div className="p-6 h-full flex flex-col gap-5">
@@ -113,7 +242,7 @@ export default function WarRoomPage() {
 
       {/* Incident Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {INCIDENTS.map(inc => {
+        {incidents.map(inc => {
           const TypeIcon = TYPE_CFG[inc.type].icon;
           return (
             <motion.button
@@ -200,7 +329,11 @@ export default function WarRoomPage() {
                 placeholder="Registrar atualização..."
                 className="flex-1 bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-xs font-mono text-slate-300 placeholder-slate-600 outline-none focus:border-red-500/30"
               />
-              <button className="px-3 py-2 bg-red-700 hover:bg-red-800 rounded-lg transition-colors">
+              <button
+                onClick={submitManualUpdate}
+                disabled={!msg.trim() || sending}
+                className="px-3 py-2 bg-red-700 hover:bg-red-800 disabled:opacity-40 rounded-lg transition-colors"
+              >
                 <SendHorizontal className="w-3.5 h-3.5 text-white" />
               </button>
             </div>
@@ -302,12 +435,17 @@ export default function WarRoomPage() {
             </div>
             <div className="space-y-1.5">
               {[
-                { label: "Protocolar Liminar",   color: "bg-red-700 hover:bg-red-800" },
-                { label: "Convocar IBAMA",        color: "bg-amber-700 hover:bg-amber-800" },
-                { label: "Emitir Nota Oficial",   color: "bg-blue-700 hover:bg-blue-800" },
-                { label: "Ativar Perícia",        color: "bg-purple-700 hover:bg-purple-800" },
+                { label: "Protocolar Liminar", action: "file_injunction", color: "bg-red-700 hover:bg-red-800" },
+                { label: "Convocar IBAMA", action: "call_ibama", color: "bg-amber-700 hover:bg-amber-800" },
+                { label: "Emitir Nota Oficial", action: "issue_public_note", color: "bg-blue-700 hover:bg-blue-800" },
+                { label: "Ativar Perícia", action: "activate_forensics", color: "bg-purple-700 hover:bg-purple-800" },
               ].map(a => (
-                <button key={a.label} className={cn("w-full py-2 text-xs font-mono text-white rounded-lg transition-colors text-left px-3", a.color)}>
+                <button
+                  key={a.label}
+                  onClick={() => publishAction(a.action, { label: a.label })}
+                  disabled={sending}
+                  className={cn("w-full py-2 text-xs font-mono text-white rounded-lg transition-colors text-left px-3 disabled:opacity-40", a.color)}
+                >
                   {a.label}
                 </button>
               ))}

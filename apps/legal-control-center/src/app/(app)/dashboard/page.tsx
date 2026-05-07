@@ -10,6 +10,7 @@ import {
   AreaChart, Area, BarChart, Bar, ResponsiveContainer,
   XAxis, YAxis, Tooltip, CartesianGrid,
 } from "recharts";
+import { api } from "@/lib/api";
 import { useLegalStore } from "@/store/legal";
 import { Card, KpiCard, Badge, RiskBadge, SectionHeader } from "@/components/ui";
 import type { RiskLevel } from "@/components/ui";
@@ -89,15 +90,78 @@ function levelIcon(level: string) {
 export default function DashboardPage() {
   const { events, wsStatus } = useLegalStore();
   const [tick, setTick] = useState(0);
+  const [kpiData, setKpiData] = useState(KPI_DATA);
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
     const t = setInterval(() => setTick(v => v + 1), 3000);
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    type ContractsResp = { total: number };
+    type ArbitrationResp = { total: number };
+    type ComplianceChecksResp = {
+      total: number;
+      items: Array<{ score: number }>;
+    };
+    type ComplianceAlert = {
+      id: string;
+      severity: "low" | "medium" | "high" | "critical";
+    };
+
+    const load = async () => {
+      try {
+        const [contracts, arbitrations, checks, alerts] = await Promise.all([
+          api.get<ContractsResp>("/contracts/"),
+          api.get<ArbitrationResp>("/arbitration/"),
+          api.get<ComplianceChecksResp>("/compliance/checks"),
+          api.get<ComplianceAlert[]>("/compliance/alerts/open"),
+        ]);
+
+        if (cancelled) return;
+
+        const complianceAvg = checks.items.length
+          ? Math.round(checks.items.reduce((acc, c) => acc + c.score, 0) / checks.items.length)
+          : 0;
+        const criticalAlerts = alerts.filter((a) => a.severity === "critical" || a.severity === "high").length;
+
+        setKpiData([
+          { ...KPI_DATA[0], value: 247 },
+          { ...KPI_DATA[1], value: arbitrations.total },
+          { ...KPI_DATA[2], value: contracts.total },
+          { ...KPI_DATA[3], value: alerts.length },
+          { ...KPI_DATA[4], value: `${complianceAvg}%` },
+          { ...KPI_DATA[5], value: Math.max(criticalAlerts, 0) },
+        ]);
+      } catch {
+        // mantém KPI_DATA mock caso API indisponível
+      }
+    };
+
+    load();
+    const id = setInterval(load, 12000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
   const feedEvents = [...SEED_EVENTS, ...events.slice(0, 10).map(e => ({
     id: e.id, type: e.type, ts: new Date(e.ts).toLocaleTimeString("pt-BR"), level: "verde",
   }))];
+  const currentDateLabel = now
+    ? now.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })
+    : "...";
+  const currentTimeLabel = now ? now.toLocaleTimeString("pt-BR") : "--:--:--";
 
   return (
     <div className="p-6 space-y-6">
@@ -107,7 +171,7 @@ export default function DashboardPage() {
             HOME OPERACIONAL
           </h1>
           <p className="text-xs text-slate-500 font-mono mt-0.5">
-            LICEU 6.x · LEGAL COMMAND CENTER · {new Date().toLocaleDateString("pt-BR", { weekday:"long", day:"2-digit", month:"long", year:"numeric" })}
+            LICEU 6.x · LEGAL COMMAND CENTER · {currentDateLabel}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -121,14 +185,14 @@ export default function DashboardPage() {
           </div>
           <div className="text-xs font-mono text-slate-600 flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            {new Date().toLocaleTimeString("pt-BR")}
+            {currentTimeLabel}
           </div>
         </div>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-        {KPI_DATA.map(({ label, value, trend, color, icon: Icon }) => (
+        {kpiData.map(({ label, value, trend, color, icon: Icon }) => (
           <motion.div
             key={label}
             initial={{ opacity: 0, y: 12 }}
