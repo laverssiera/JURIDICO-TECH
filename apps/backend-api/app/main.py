@@ -12,6 +12,7 @@ from app.db.migrations import run_migrations_async
 from app.db.session import init_models
 from app.events.router import router as events_router
 from app.middleware.tenant import TenantMiddleware
+from app.replay.router import router as replay_router
 
 
 @asynccontextmanager
@@ -42,6 +43,7 @@ app.include_router(contract_router, prefix="/contracts", tags=["contracts"])
 app.include_router(arbitration_router, prefix="/arbitration", tags=["arbitration"])
 app.include_router(compliance_router, prefix="/compliance", tags=["compliance"])
 app.include_router(events_router, prefix="/events", tags=["events"])
+app.include_router(replay_router, prefix="/replay", tags=["replay"])
 
 
 @app.get("/health")

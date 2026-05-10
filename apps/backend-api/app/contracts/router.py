@@ -7,10 +7,14 @@ from app.contracts.schemas import (
     ClauseListResponse,
     ClauseResponse,
     ClauseUpdate,
+    ContractBreachRequest,
     ContractCreate,
     ContractCreateResult,
+    ContractLifecycleResponse,
     ContractListResponse,
     ContractResponse,
+    ContractSignRequest,
+    ContractTerminateRequest,
 )
 from app.contracts.service import ClauseService, ContractService
 from app.db.session import get_session
@@ -199,3 +203,102 @@ async def delete_clause(
 
     await repo.delete_clause(clause)
     return {"status": "deleted", "clause_id": clause_id}
+
+
+# ── Lifecycle ─────────────────────────────────────────────────────────────────
+
+VALID_TRANSITIONS: dict[str, list[str]] = {
+    "created": ["review", "signed"],
+    "review": ["signed", "created"],
+    "signed": ["active"],
+    "active": ["terminated", "breached"],
+    "terminated": [],
+    "breached": [],
+}
+
+
+def _assert_transition(current: str, target: str) -> None:
+    if target not in VALID_TRANSITIONS.get(current, []):
+        raise HTTPException(
+            status_code=422,
+            detail=f"Transição inválida: {current} → {target}",
+        )
+
+
+@router.patch("/{contract_id}/sign", response_model=ContractLifecycleResponse, status_code=200)
+async def sign_contract(
+    contract_id: str,
+    data: ContractSignRequest,
+    session: AsyncSession = Depends(get_session),
+) -> ContractLifecycleResponse:
+    repo = ContractRepository(session)
+    contract = await repo.get(contract_id)
+    if contract is None:
+        raise HTTPException(status_code=404, detail="contract_not_found")
+    _assert_transition(contract.status, "signed")
+    updated = await repo.transition(
+        contract=contract,
+        new_status="signed",
+        subject="legal.contract.signed",
+        payload={"contract_id": contract.id, "signatory": data.signatory, "title": contract.title},
+    )
+    return ContractLifecycleResponse(contract_id=updated.id, status=updated.status, event_status="outbox_pending")
+
+
+@router.patch("/{contract_id}/activate", response_model=ContractLifecycleResponse, status_code=200)
+async def activate_contract(
+    contract_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> ContractLifecycleResponse:
+    repo = ContractRepository(session)
+    contract = await repo.get(contract_id)
+    if contract is None:
+        raise HTTPException(status_code=404, detail="contract_not_found")
+    _assert_transition(contract.status, "active")
+    updated = await repo.transition(
+        contract=contract,
+        new_status="active",
+        subject="legal.contract.created",
+        payload={"contract_id": contract.id, "status": "active", "title": contract.title},
+    )
+    return ContractLifecycleResponse(contract_id=updated.id, status=updated.status, event_status="outbox_pending")
+
+
+@router.patch("/{contract_id}/breach", response_model=ContractLifecycleResponse, status_code=200)
+async def breach_contract(
+    contract_id: str,
+    data: ContractBreachRequest,
+    session: AsyncSession = Depends(get_session),
+) -> ContractLifecycleResponse:
+    repo = ContractRepository(session)
+    contract = await repo.get(contract_id)
+    if contract is None:
+        raise HTTPException(status_code=404, detail="contract_not_found")
+    _assert_transition(contract.status, "breached")
+    updated = await repo.transition(
+        contract=contract,
+        new_status="breached",
+        subject="legal.contract.breach",
+        payload={"contract_id": contract.id, "reason": data.reason, "title": contract.title},
+    )
+    return ContractLifecycleResponse(contract_id=updated.id, status=updated.status, event_status="outbox_pending")
+
+
+@router.patch("/{contract_id}/terminate", response_model=ContractLifecycleResponse, status_code=200)
+async def terminate_contract(
+    contract_id: str,
+    data: ContractTerminateRequest,
+    session: AsyncSession = Depends(get_session),
+) -> ContractLifecycleResponse:
+    repo = ContractRepository(session)
+    contract = await repo.get(contract_id)
+    if contract is None:
+        raise HTTPException(status_code=404, detail="contract_not_found")
+    _assert_transition(contract.status, "terminated")
+    updated = await repo.transition(
+        contract=contract,
+        new_status="terminated",
+        subject="legal.contract.terminated",
+        payload={"contract_id": contract.id, "reason": data.reason, "status": "terminated"},
+    )
+    return ContractLifecycleResponse(contract_id=updated.id, status=updated.status, event_status="outbox_pending")

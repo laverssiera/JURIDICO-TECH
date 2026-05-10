@@ -60,3 +60,18 @@ class ContractRepository:
         await self.session.commit()
         await self.session.refresh(clause)
         return clause
+
+    async def transition(
+        self,
+        contract: LegalContract,
+        new_status: str,
+        subject: str,
+        payload: dict,
+    ) -> LegalContract:
+        outbox_repo = OutboxRepository(self.session)
+        contract.status = new_status
+        self.session.add(contract)
+        await outbox_repo.enqueue(subject=subject, payload=payload)
+        await self.session.commit()
+        await self.session.refresh(contract)
+        return contract

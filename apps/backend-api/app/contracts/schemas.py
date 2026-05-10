@@ -53,3 +53,21 @@ class ClauseResponse(BaseModel):
 class ClauseListResponse(BaseModel):
     items: list[ClauseResponse]
     total: int
+
+
+class ContractSignRequest(BaseModel):
+    signatory: str
+
+
+class ContractBreachRequest(BaseModel):
+    reason: str
+
+
+class ContractTerminateRequest(BaseModel):
+    reason: str
+
+
+class ContractLifecycleResponse(BaseModel):
+    contract_id: str
+    status: str
+    event_status: str
