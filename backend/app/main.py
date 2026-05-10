@@ -15,6 +15,9 @@ from app.routers import legal_digital_twin, regulatory_radar_global, trust, gove
 from app.routers import legal_war_room, psycholegal, esg_human_rights, smart_clause
 from app.routers import legal_knowledge_graph, autonomous_arbitration, legal_marketplace, legal_university
 from app.routers import global_legal_simulation
+from app.routers import scientific_authorship, patent_discovery, interplanetary_research_compliance
+from app.routers import orbital_space_law, deep_ocean_law, ai_ethics_agi_governance
+from app.routers import quantum_fusion_regulation, civilizational_governance
 from app.john import john_legal
 from app.integration import mae_liceu
 from juridicotech.modules.contracts import router as core_v2_contract_router
@@ -167,3 +170,13 @@ app.include_router(governance_ai.router, prefix="/liceu/governance-ai", tags=["L
 app.include_router(legal_marketplace.router, prefix="/liceu/marketplace", tags=["LICEU 6.x — Marketplace Jurídico"])
 app.include_router(legal_university.router, prefix="/liceu/universidade", tags=["LICEU 6.x — Universidade Jurídica"])
 app.include_router(global_legal_simulation.router, prefix="/liceu/simulacao-global", tags=["LICEU 6.x — Global Legal Simulation"])
+
+# ── LICEU 6.x + Cosmic Law — Scientific Governance ─────────────────────────
+app.include_router(scientific_authorship.router, prefix="/science/authorship", tags=["Cosmic Law — Scientific Authorship"])
+app.include_router(patent_discovery.router, prefix="/patents", tags=["Cosmic Law — Patent & Discovery"])
+app.include_router(interplanetary_research_compliance.router, prefix="/research", tags=["Cosmic Law — Research Compliance"])
+app.include_router(orbital_space_law.router, prefix="/space", tags=["Cosmic Law — Orbital & Space Law"])
+app.include_router(deep_ocean_law.router, prefix="/oceanic", tags=["Cosmic Law — Deep Ocean Law"])
+app.include_router(ai_ethics_agi_governance.router, prefix="/ai/governance", tags=["Cosmic Law — AI Ethics & AGI"])
+app.include_router(quantum_fusion_regulation.router, tags=["Cosmic Law — Quantum & Fusion Regulation"])
+app.include_router(civilizational_governance.router, prefix="/civilization", tags=["Cosmic Law — Civilizational Governance"])

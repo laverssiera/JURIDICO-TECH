@@ -106,6 +106,24 @@ _EVENT_SUBJECTS = {
     "university.enrollment.created": "liceu.events.legal.university.enrollment.created",
     "simulation.global.executed": "liceu.events.legal.simulation.executed",
     "simulation.global.risk.high": "liceu.events.legal.simulation.risk.high",
+    # Cosmic Law — Scientific Governance
+    "science.authorship.registered": "liceu.events.science.authorship.registered",
+    "science.discovery.validated": "liceu.events.science.discovery.validated",
+    "science.discovery.disputed": "liceu.events.science.discovery.disputed",
+    "patent.created": "liceu.events.patent.created",
+    "patent.approved": "liceu.events.patent.approved",
+    "patent.licensed": "liceu.events.patent.licensed",
+    "research.compliance.approved": "liceu.events.research.compliance.approved",
+    "research.compliance.blocked": "liceu.events.research.compliance.blocked",
+    "space.mission.legal.approved": "liceu.events.space.mission.legal.approved",
+    "space.treaty.violation": "liceu.events.space.treaty.violation",
+    "planetary.treaty.registered": "liceu.events.planetary.treaty.registered",
+    "oceanic.habitat.compliant": "liceu.events.oceanic.habitat.compliant",
+    "ai.governance.alert": "liceu.events.ai.governance.alert",
+    "agi.ethics.violation": "liceu.events.agi.ethics.violation",
+    "fusion.reactor.audit.completed": "liceu.events.fusion.reactor.audit.completed",
+    "quantum.runtime.risk.detected": "liceu.events.quantum.runtime.risk.detected",
+    "civilization.impact.assessed": "liceu.events.civilization.impact.assessed",
 }
 
 
