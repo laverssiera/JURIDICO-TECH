@@ -16,13 +16,21 @@ import { Card, KpiCard, Badge, RiskBadge, SectionHeader } from "@/components/ui"
 import type { RiskLevel } from "@/components/ui";
 
 /* ─── mock data ─────────────────────────────────────────── */
-const KPI_DATA = [
-  { label: "Obras Monitoradas",    value: 247,   trend: "up"   as const, color: "blue"  as const, icon: Building2 },
-  { label: "Processos Ativos",     value: 1_843, trend: "up"   as const, color: "amber" as const, icon: Gavel },
-  { label: "Contratos Vigentes",   value: 612,   trend: "stable" as const, color: "green" as const, icon: FileText },
-  { label: "Incidentes Abertos",   value: 18,    trend: "down" as const, color: "red"   as const, icon: AlertTriangle },
-  { label: "Compliance Score",     value: "94%", trend: "up"   as const, color: "green" as const, icon: Shield },
-  { label: "Fornecedores Ativos",  value: 389,   trend: "up"   as const, color: "blue"  as const, icon: Globe },
+type KpiItem = {
+  label: string;
+  value: number | string;
+  trend: "up" | "down" | "stable";
+  color: "blue" | "amber" | "green" | "red";
+  icon: typeof Building2;
+};
+
+const KPI_DATA: KpiItem[] = [
+  { label: "Obras Monitoradas",    value: 247,   trend: "up",     color: "blue",  icon: Building2 },
+  { label: "Processos Ativos",     value: 1_843, trend: "up",     color: "amber", icon: Gavel },
+  { label: "Contratos Vigentes",   value: 612,   trend: "stable", color: "green", icon: FileText },
+  { label: "Incidentes Abertos",   value: 18,    trend: "down",   color: "red",   icon: AlertTriangle },
+  { label: "Compliance Score",     value: "94%",trend: "up",     color: "green", icon: Shield },
+  { label: "Fornecedores Ativos",  value: 389,   trend: "up",     color: "blue",  icon: Globe },
 ];
 
 const HEATMAP_ITEMS: { id: string; label: string; tipo: string; risk: RiskLevel; loc: string }[] = [
@@ -90,7 +98,7 @@ function levelIcon(level: string) {
 export default function DashboardPage() {
   const { events, wsStatus } = useLegalStore();
   const [tick, setTick] = useState(0);
-  const [kpiData, setKpiData] = useState(KPI_DATA);
+  const [kpiData, setKpiData] = useState<KpiItem[]>(KPI_DATA);
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
