@@ -15,6 +15,7 @@ from app.routers import legal_digital_twin, regulatory_radar_global, trust, gove
 from app.routers import legal_war_room, psycholegal, esg_human_rights, smart_clause
 from app.routers import legal_knowledge_graph, autonomous_arbitration, legal_marketplace, legal_university
 from app.routers import global_legal_simulation
+from app.routers import legal_runtime
 from app.routers import scientific_authorship, patent_discovery, interplanetary_research_compliance
 from app.routers import orbital_space_law, deep_ocean_law, ai_ethics_agi_governance
 from app.routers import quantum_fusion_regulation, civilizational_governance
@@ -144,6 +145,7 @@ app.include_router(core_v2_contract_router, prefix="/core-v2/contracts", tags=["
 app.include_router(core_v2_risk_router, prefix="/core-v2/risk", tags=["JuridicoTech Core V2"])
 app.include_router(core_v2_bypass_router, prefix="/core-v2/bypass", tags=["JuridicoTech Core V2"])
 app.include_router(core_v2_events_router, prefix="/core-v2/events", tags=["JuridicoTech Core V2"])
+app.include_router(legal_runtime.router, tags=["Perpetual Sovereign Legal Runtime"])
 
 # ── LICEU 6.0 — Módulos Cognitivos ──────────────────────────────────────────
 app.include_router(preventive.router, prefix="/liceu/preventivo", tags=["LICEU 6.0 — Preventivo"])
