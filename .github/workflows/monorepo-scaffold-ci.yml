@@ -1,0 +1,37 @@
+name: monorepo-scaffold-ci
+
+on:
+  pull_request:
+    paths:
+      - "apps/backend-api/**"
+      - "apps/legal-control-center/**"
+      - "packages/**"
+      - "infra/**"
+      - "package.json"
+
+jobs:
+  backend-sanity:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m compileall app
+
+  control-center-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/legal-control-center
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci --workspaces=false
+        working-directory: apps/legal-control-center
+      - run: npm run build

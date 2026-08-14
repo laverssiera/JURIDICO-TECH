@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  prometheus:
+    image: prom/prometheus
+
+  grafana:
+    image: grafana/grafana
+
+  tempo:
+    image: grafana/tempo
+
+  loki:
+    image: grafana/loki
+
+  jaeger:
+    image: jaegertracing/all-in-one

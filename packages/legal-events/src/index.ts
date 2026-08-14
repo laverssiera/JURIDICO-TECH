@@ -1,0 +1,29 @@
+export const LEGAL_SUBJECTS = [
+  "legal.contract.created",
+  "legal.contract.signed",
+  "legal.contract.breach",
+  "legal.arbitration.started",
+  "legal.arbitration.closed",
+  "legal.compliance.alert",
+  "legal.audit.created",
+  "legal.pericia.generated",
+  "legal.embargo.detected",
+  "legal.asset.risk",
+  "legal.sst.violation",
+  "legal.esg.alert",
+  "legal.tax.risk",
+  "legal.governance.blocked",
+] as const;
+
+export type LegalSubject = (typeof LEGAL_SUBJECTS)[number];
+
+export type LegalEventEnvelope<TPayload = Record<string, unknown>> = {
+  meta: {
+    trace_id: string;
+    decision_id: string;
+    timestamp: string;
+    origin: string;
+  };
+  payload: TPayload;
+  signature: "sha256";
+};

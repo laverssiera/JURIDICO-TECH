@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package liceu.legal;
+
+message LegalEvent {
+  string event_id = 1;
+  string event_type = 2;
+
+  string entity_type = 3; // deal, lead, property
+  string entity_id = 4;
+
+  string user_id = 5;
+  string module = 6;
+
+  map<string, string> metadata = 7;
+
+  int64 timestamp = 8;
+}
+
+message Contract {
+  string id = 1;
+  string deal_id = 2;
+  string property_id = 3;
+
+  repeated string parties = 4;
+
+  double value = 5;
+  string status = 6; // draft, signed, locked
+
+  string hash = 7;
+  int64 created_at = 8;
+}
