@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-import jwt
+from app.core.jwt_compat import encode_hs256_jwt
 
 
 class UnifiedLegalIdentity:
@@ -16,5 +16,5 @@ class UnifiedLegalIdentity:
             "roles": roles,
             "namespace": "juridicotech.legal.identity",
         }
-        token = jwt.encode(claims, self.secret, algorithm="HS256")
+        token = encode_hs256_jwt(claims, self.secret)
         return {"claims": claims, "token": token}

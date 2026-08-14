@@ -4,6 +4,7 @@ from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
 from app.arbitration.router import router as arbitration_router
 from app.arbitration.autonomous_arbitration import AutonomousArbitrationEngine
@@ -17,6 +18,7 @@ from app.db.session import init_models
 from app.events.router import router as events_router
 from app.federation.federation_runtime import FederationRuntime
 from app.interplanetary.interplanetary_regulation import InterplanetaryRegulationRuntime
+from app.graph.legal_graph import LegalKnowledgeGraph
 from app.legal_runtime.causal_runtime import CANONICAL_NATS_EVENTS, CausalLegalRuntime
 from app.legal_runtime.legal_twin import LegalDigitalTwin
 from app.legal_runtime.unified_identity import UnifiedLegalIdentity
@@ -42,6 +44,12 @@ causal_runtime = CausalLegalRuntime()
 patent_runtime = PatentIntelligenceRuntime()
 legal_twin = LegalDigitalTwin()
 unified_identity = UnifiedLegalIdentity()
+legal_graph = LegalKnowledgeGraph()
+
+
+class RuntimeIdentityRequest(BaseModel):
+    subject: str = Field(min_length=1)
+    roles: list[str] = Field(default_factory=list)
 
 
 @asynccontextmanager
@@ -102,6 +110,13 @@ async def runtime_status() -> dict[str, Any]:
         "legal_ai": "enabled",
         "interplanetary_regulation": "active",
         "digital_twin": "online",
+        "federation_authority": "active",
+        "knowledge_graph": "enabled",
+        "ecosystem_memory": "enabled",
+        "causal_runtime": "active",
+        "patent_intelligence": "active",
+        "autonomous_arbitration": "active",
+        "collective_legal_runtime": "online",
         "memory_items": len(ecosystem_memory.latest()),
     }
 
@@ -134,6 +149,19 @@ async def runtime_patent() -> dict[str, float | bool]:
     return result
 
 
+@app.post("/runtime/graph-case")
+async def runtime_graph_case() -> dict[str, Any]:
+    payload = {
+        "id": "case-liceu-001",
+        "domain": "interplanetary_compliance",
+        "risk": "high",
+        "status": "under_analysis",
+    }
+    result = legal_graph.register_case(payload)
+    ecosystem_memory.store({"event": "liceu.legal.case.created", "result": result})
+    return result
+
+
 @app.post("/runtime/causal")
 async def runtime_causal() -> dict[str, Any]:
     result = causal_runtime.analyze({"type": "unauthorized_patent_use"})
@@ -152,6 +180,13 @@ async def runtime_identity() -> dict[str, Any]:
         subject="john_legal_collective",
         roles=["federated_agi", "arbitration", "planetary_compliance"],
     )
+
+
+@app.post("/runtime/identity")
+async def runtime_identity_dynamic(payload: RuntimeIdentityRequest) -> dict[str, Any]:
+    result = unified_identity.issue_identity(subject=payload.subject, roles=payload.roles)
+    ecosystem_memory.store({"event": "liceu.legal.governance.decision", "result": result})
+    return result
 
 
 @app.get("/runtime/events")

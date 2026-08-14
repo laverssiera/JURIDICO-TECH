@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -11,7 +12,7 @@ class ComplianceAlertResponse(BaseModel):
     check_id: str
     alert_type: str
     severity: str
-    message: str
+    message: str = Field(min_length=1)
     resolved: bool
     created_at: datetime
 
@@ -51,6 +52,15 @@ class AlertResolveResponse(BaseModel):
 class RuntimeStartRequest(BaseModel):
     entity_id: str
     scope: str = "global"
+    case_code: str | None = None
+    case_name: str | None = None
+    mission_profile: dict[str, Any] = Field(default_factory=dict)
+    objective_tracks: list[str] = Field(default_factory=list)
+
+
+class RuntimeScopeUpdateRequest(BaseModel):
+    scope: str = "global"
+    pulse_after_update: bool = True
 
 
 class RuntimeFinding(BaseModel):
@@ -58,18 +68,29 @@ class RuntimeFinding(BaseModel):
     alert_type: str
     severity: str
     passed: bool
-    message: str
+    message: str = Field(min_length=1)
 
 
 class RuntimeStatusResponse(BaseModel):
     entity_id: str
     scope: str
+    case_code: str | None = None
+    case_name: str | None = None
+    mission_profile: dict[str, Any] = Field(default_factory=dict)
+    objective_tracks: list[str] = Field(default_factory=list)
     active: bool
     registered_at: datetime
     last_checked_at: datetime | None
     last_score: float | None
     check_count: int
     last_findings: list[RuntimeFinding] = Field(default_factory=list)
+
+
+class RuntimeListResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    items: list[RuntimeStatusResponse] = Field(default_factory=list)
 
 
 class RuntimeStopResponse(BaseModel):

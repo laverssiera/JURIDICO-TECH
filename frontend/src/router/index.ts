@@ -6,6 +6,7 @@ import SPE from "@/pages/SPE.vue"
 import Portal from "@/pages/PortalCliente.vue"
 import Backoffice from "@/pages/Backoffice.vue"
 import DashboardExecutivo from "@/pages/DashboardExecutivo.vue"
+import LegalAssurance from "@/pages/LegalAssurance.vue"
 
 export default createRouter({
 history:createWebHistory(),
@@ -16,5 +17,6 @@ routes:[
 { path:"/portal", component:Portal },
 { path:"/backoffice", component:Backoffice },
 { path:"/executivo", component:DashboardExecutivo }
+,{ path:"/assurance", component:LegalAssurance }
 ]
 })

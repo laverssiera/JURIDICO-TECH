@@ -1,0 +1,1 @@
+"""Federation hooks package."""

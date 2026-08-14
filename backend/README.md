@@ -63,6 +63,27 @@ Documentacao interativa:
 - `POST /legal/compliance/check/{monolito_id}`
 - `POST /legal/compliance/check`
 
+### WAVE 43 — JURIDICOTECH
+
+- `GET /legal/waves/43` — estado e exemplos dos tracks Legal State, Contracts, Regulation, IP e Compliance.
+- `POST /legal/continental/state` — consolida o estado jurídico de uma operação em múltiplos países.
+
+Exemplo de estado continental:
+
+```bash
+curl -X POST http://localhost:8000/legal/continental/state \
+	-H "Content-Type: application/json" \
+	-d '{
+		"countries": ["BR", "PT"],
+		"contracts": [{"contract_id": "CTR-W43-001", "contract_type": "MSA"}],
+		"assets": [{"asset_id": "IP-W43-001", "type": "patent", "protected_in": ["BR"]}],
+		"controls": {"lgpd": true, "cross_border_transfer": true},
+		"sectors": ["infrastructure", "technology"]
+	}'
+```
+
+O endpoint `GET /legal/waves/43` retorna os payloads de referência específicos para cada track.
+
 ### Hub legal layer
 
 - `POST /legal/gate/validate`

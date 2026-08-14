@@ -1,0 +1,1 @@
+export type { PatentRecord, ResearchLink } from "./knowledge"
