@@ -14,6 +14,31 @@ Runtime jurídico escalável que evolui de plataforma corporativa para **guardi�
 - Estabelecer governança para programas globais e interplanetários
 - Assegurar que toda inovação tenha finalidade civilizacional
 
+### Camada Federativa + Interplanetária
+
+JURIDICOTECH passa a operar como runtime legal soberano do ecossistema, com foco em:
+
+- Interplanetary Legal Runtime para pesquisa, tratados e operações planetárias
+- Sovereign Compliance Engine para compliance científico e financeiro
+- Patent Intelligence Network para proteção de autoria e descoberta
+- Regulatory AI Mesh para validação de AGI e automação extrema
+- Treaty & Space Law Runtime para operações orbitais e interplanetárias
+
+Integrações canônicas:
+
+- P&D
+- Academia do Saber
+- CEA Investimentos
+- Econotech
+- Game MKT
+- Archimedes
+- Hub Backoffice
+- Fornecedores
+- Opera
+- BIMARQENG
+- John Brasileiro
+- Cefeida 3C273
+
 ### Camadas LICEU 6.x + Cosmic Law (1-17)
 
 **Camadas 1-13** (Legal Corporativo):
@@ -45,26 +70,28 @@ juridicotech/
 │   ├── legal-public-site/
 │   ├── legal-control-center/
 │   ├── mobile-field-app/
-│   └── interplanetary-governance/
-│       ├── treaty-engine/
-│       ├── patent-engine/
-│       ├── research-compliance/
-│       ├── orbital-law/
-│       ├── deep-ocean-law/
-│       ├── ai-ethics/
-│       ├── quantum-regulation/
-│       ├── biotech-regulation/
-│       ├── fusion-regulation/
-│       ├── civilizational-ip/
-│       ├── scientific-authorship/
-│       └── planetary-governance/
+│   ├── interplanetary-law-runtime/
+│   ├── patent-intelligence-engine/
+│   ├── scientific-compliance-runtime/
+│   ├── orbital-regulatory-radar/
+│   ├── sovereign-governance-runtime/
+│   ├── legal-war-room/
+│   ├── treaty-engine/
+│   ├── space-law-runtime/
+│   ├── ai-regulation-runtime/
+│   └── research-protection-runtime/
 ├── packages/
 │   ├── ui-kit/
 │   ├── legal-sdk/
 │   ├── nats-sdk/
 │   ├── auth-sdk/
 │   ├── legal-events/
-│   └── design-system/
+│   ├── design-system/
+│   ├── federation-sdk/
+│   ├── observability-sdk/
+│   ├── ecosystem-memory-sdk/
+│   ├── causal-sdk/
+│   └── legal-knowledge-sdk/
 ├── infra/
 │   ├── kubernetes/
 │   ├── terraform/
@@ -97,11 +124,28 @@ juridicotech/
 - **Quantum & Fusion Regulation** - Compliance de computação quântica, fusão nuclear, sistemas energéticos
 - **Civilizational Impact Engine** - Análise de impacto social, benefício coletivo, prioridade de habitação
 
+### WAVE 43 — JURIDICOTECH
+
+A WAVE 43 consolida o estado jurídico continental em cinco tracks operacionais:
+
+- **Legal State**: estado jurídico por países, rota e operação.
+- **Contracts**: lei aplicável, cláusulas obrigatórias e avaliação cross-border.
+- **Regulation**: bundles normativos por país e conflitos regulatórios.
+- **IP**: cobertura de proteção intelectual, lacunas e índice de cobertura.
+- **Compliance**: regras exigidas, controles ausentes e score de conformidade.
+
+Endpoints:
+
+- `GET /legal/waves/43` — manifesto da wave e payloads de referência.
+- `POST /legal/continental/state` — avaliação consolidada da operação.
+
 ### Infraestrutura Backend
 - Backend principal em `backend/` com FastAPI, tenant middleware, NATS integration completa
 - Novo domínio em `apps/interplanetary-governance/` com sub-engines especializados
 - Legal Event Registry com 50+ NATS subjects (+ 8 novos para scientific governance)
 - SQL base expandida com tabelas para autoria científica, patentes, pesquisa, impacto civilizacional
+- Nova camada federativa em `apps/interplanetary-law-runtime/` com NATS, Neo4j, Redis, Prometheus e causal runtime
+- SDKs compartilhados em `packages/federation-sdk/`, `packages/observability-sdk/`, `packages/ecosystem-memory-sdk/`, `packages/causal-sdk/` e `packages/legal-knowledge-sdk/`
 
 ### Testes
 - Backend: `pytest -q` → 76 passed, 1 skipped (última execução: 2026-05-07)

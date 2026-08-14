@@ -4,7 +4,8 @@ import os
 from typing import Any
 
 import httpx
-import jwt
+
+from app.core.jwt_compat import encode_hs256_jwt
 
 
 class FederationRuntime:
@@ -14,13 +15,12 @@ class FederationRuntime:
         self.registry = os.getenv("FEDERATION_REGISTRY", "http://liceu-runtime:9000")
 
     def token(self) -> str:
-        return jwt.encode(
+        return encode_hs256_jwt(
             {
                 "monolith": self.monolith,
                 "role": "legal_runtime",
             },
             self.secret,
-            algorithm="HS256",
         )
 
     async def register(self) -> dict[str, Any]:

@@ -24,9 +24,6 @@ jobs:
 
   control-center-build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/legal-control-center
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,3 +32,4 @@ jobs:
       - run: npm ci --workspaces=false
         working-directory: apps/legal-control-center
       - run: npm run build
+        working-directory: apps/legal-control-center
