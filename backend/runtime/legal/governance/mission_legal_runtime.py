@@ -272,5 +272,47 @@ class MissionLegalRuntime:
             "status": "active",
         }
 
+    def wave_59(self) -> dict[str, Any]:
+        return {
+            "wave": 59,
+            "program": "JURIDICOTECH",
+            "tracks": {
+                "contracts": {"focus": ["scope", "obligations", "remedies"]},
+                "international_obligations": {"focus": ["treaties", "jurisdiction", "reporting"]},
+                "regulatory_exposure": {"focus": ["applicable_rules", "licensing", "sanctions"]},
+                "liability": {"focus": ["allocation", "indemnity", "recourse"]},
+                "insurance": {"focus": ["coverage", "limits", "exclusions"]},
+                "ip": {"focus": ["ownership", "licensing", "territorial_protection"]},
+                "data_rights": {"focus": ["ownership", "access", "lawful_transfer"]},
+                "cross_border_compliance": {"focus": ["transfer_controls", "screening", "auditability"]},
+            },
+            "evaluation_endpoint": "/legal/waves/59/evaluate",
+            "status": "active",
+        }
+
+    def evaluate_wave_59(self, payload: dict[str, Any]) -> dict[str, Any]:
+        dimensions = {
+            "contracts": payload.get("contracts", False),
+            "international_obligations": payload.get("international_obligations", False),
+            "regulatory_exposure": payload.get("regulatory_exposure", False),
+            "liability": payload.get("liability", False),
+            "insurance": payload.get("insurance", False),
+            "ip": payload.get("ip", False),
+            "data_rights": payload.get("data_rights", False),
+            "cross_border_compliance": payload.get("cross_border_compliance", False),
+        }
+        gaps = [name for name, value in dimensions.items() if not self._implication_is_positive(value)]
+        score = round((len(dimensions) - len(gaps)) / len(dimensions) * 100, 2)
+        risk_level = "low" if score == 100 else "medium" if score >= 75 else "high" if score >= 50 else "critical"
+        return {
+            "wave": 59,
+            "status": "approved" if not gaps else "attention",
+            "score": score,
+            "risk_level": risk_level,
+            "dimensions": dimensions,
+            "gaps": gaps,
+            "required_actions": [f"Avaliar o eixo {gap.replace('_', ' ')}" for gap in gaps],
+        }
+
     def continental_state(self, **payload: Any) -> dict[str, Any]:
         return self._continental.build_state(**payload)
