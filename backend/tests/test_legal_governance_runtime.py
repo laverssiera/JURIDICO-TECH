@@ -237,3 +237,29 @@ def test_legal_wave_43_endpoint_contains_expected_tracks():
     assert "regulation" in payload["tracks"]
     assert "ip" in payload["tracks"]
     assert "compliance" in payload["tracks"]
+
+
+def test_legal_wave_59_evaluates_all_legal_exposure_tracks():
+    manifest = client.get("/legal/waves/59")
+    assert manifest.status_code == 200
+    assert set(manifest.json()["tracks"]) == {
+        "contracts",
+        "international_obligations",
+        "regulatory_exposure",
+        "liability",
+        "insurance",
+        "ip",
+        "data_rights",
+        "cross_border_compliance",
+    }
+
+    response = client.post(
+        "/legal/waves/59/evaluate",
+        json={track: True for track in manifest.json()["tracks"]},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "approved"
+    assert payload["score"] == 100.0
+    assert payload["gaps"] == []

@@ -85,6 +85,17 @@ class ContinentalLegalStateRequest(BaseModel):
     operation_id: str | None = None
 
 
+class Wave59EvaluationRequest(BaseModel):
+    contracts: bool | str | dict[str, Any] = False
+    international_obligations: bool | str | dict[str, Any] = False
+    regulatory_exposure: bool | str | dict[str, Any] = False
+    liability: bool | str | dict[str, Any] = False
+    insurance: bool | str | dict[str, Any] = False
+    ip: bool | str | dict[str, Any] = False
+    data_rights: bool | str | dict[str, Any] = False
+    cross_border_compliance: bool | str | dict[str, Any] = False
+
+
 @router.post("/legal/contract/generate")
 def legal_contract_generate(request: ContractGenerateRequest) -> dict[str, Any]:
     return _runtime.generate_contract(
@@ -210,6 +221,16 @@ def legal_state() -> dict[str, Any]:
 @router.get("/legal/waves/43")
 def legal_wave_43() -> dict[str, Any]:
     return _runtime.wave_43()
+
+
+@router.get("/legal/waves/59")
+def legal_wave_59() -> dict[str, Any]:
+    return _runtime.wave_59()
+
+
+@router.post("/legal/waves/59/evaluate")
+def evaluate_legal_wave_59(request: Wave59EvaluationRequest) -> dict[str, Any]:
+    return _runtime.evaluate_wave_59(request.model_dump())
 
 
 @router.post("/legal/continental/state")

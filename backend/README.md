@@ -68,6 +68,11 @@ Documentacao interativa:
 - `GET /legal/waves/43` — estado e exemplos dos tracks Legal State, Contracts, Regulation, IP e Compliance.
 - `POST /legal/continental/state` — consolida o estado jurídico de uma operação em múltiplos países.
 
+### WAVE 59 — avaliação integrada
+
+- `GET /legal/waves/59` — manifesto dos eixos Contracts, International Obligations, Regulatory Exposure, Liability, Insurance, IP, Data Rights e Cross-Border Compliance.
+- `POST /legal/waves/59/evaluate` — avalia a cobertura dos oito eixos e retorna score, gaps e ações necessárias.
+
 Exemplo de estado continental:
 
 ```bash
