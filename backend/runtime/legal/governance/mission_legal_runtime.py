@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+from uuid import uuid4
 
 from runtime.legal.governance.claims_runtime import ClaimsRuntime
 from runtime.legal.governance.compliance_runtime import ComplianceRuntime
@@ -306,6 +307,50 @@ class MissionLegalRuntime:
         risk_level = "low" if score == 100 else "medium" if score >= 75 else "high" if score >= 50 else "critical"
         return {
             "wave": 59,
+            "status": "approved" if not gaps else "attention",
+            "score": score,
+            "risk_level": risk_level,
+            "dimensions": dimensions,
+            "gaps": gaps,
+            "required_actions": [f"Avaliar o eixo {gap.replace('_', ' ')}" for gap in gaps],
+        }
+
+    def wave_70(self) -> dict[str, Any]:
+        return {
+            "wave": 70,
+            "program": "JURIDICOTECH",
+            "tracks": {
+                "contracts": {"focus": ["scope", "obligations", "remedies"]},
+                "compliance": {"focus": ["controls", "auditability", "monitoring"]},
+                "liability": {"focus": ["allocation", "indemnity", "recourse"]},
+                "insurance": {"focus": ["coverage", "limits", "exclusions"]},
+                "regulatory_exposure": {"focus": ["applicable_rules", "licensing", "sanctions"]},
+                "ip": {"focus": ["ownership", "licensing", "territorial_protection"]},
+                "data_rights": {"focus": ["ownership", "access", "lawful_transfer"]},
+                "cross_border_obligations": {"focus": ["jurisdiction", "transfer_controls", "reporting"]},
+            },
+            "validation_endpoint": "/legal/waves/70/validate",
+            "status": "active",
+        }
+
+    def evaluate_wave_70(self, payload: dict[str, Any]) -> dict[str, Any]:
+        dimensions = {
+            "contracts": payload.get("contracts", False),
+            "compliance": payload.get("compliance", False),
+            "liability": payload.get("liability", False),
+            "insurance": payload.get("insurance", False),
+            "regulatory_exposure": payload.get("regulatory_exposure", False),
+            "ip": payload.get("ip", False),
+            "data_rights": payload.get("data_rights", False),
+            "cross_border_obligations": payload.get("cross_border_obligations", False),
+        }
+        gaps = [name for name, value in dimensions.items() if not self._implication_is_positive(value)]
+        score = round((len(dimensions) - len(gaps)) / len(dimensions) * 100, 2)
+        risk_level = "low" if score == 100 else "medium" if score >= 75 else "high" if score >= 50 else "critical"
+        legal_decision_id = f"LDEC-{uuid4().hex[:12].upper()}"
+        return {
+            "legal_decision_id": legal_decision_id,
+            "wave": 70,
             "status": "approved" if not gaps else "attention",
             "score": score,
             "risk_level": risk_level,

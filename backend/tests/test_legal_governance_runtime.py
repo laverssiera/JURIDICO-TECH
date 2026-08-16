@@ -263,3 +263,31 @@ def test_legal_wave_59_evaluates_all_legal_exposure_tracks():
     assert payload["status"] == "approved"
     assert payload["score"] == 100.0
     assert payload["gaps"] == []
+
+
+def test_legal_wave_70_returns_legal_decision_id_for_global_legal_validation():
+    manifest = client.get("/legal/waves/70")
+    assert manifest.status_code == 200
+    tracks = manifest.json()["tracks"]
+    assert set(tracks) == {
+        "contracts",
+        "compliance",
+        "liability",
+        "insurance",
+        "regulatory_exposure",
+        "ip",
+        "data_rights",
+        "cross_border_obligations",
+    }
+
+    response = client.post(
+        "/legal/waves/70/validate",
+        json={track: True for track in tracks},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["legal_decision_id"].startswith("LDEC-")
+    assert payload["status"] == "approved"
+    assert payload["score"] == 100.0
+    assert payload["gaps"] == []
