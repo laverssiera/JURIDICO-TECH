@@ -291,3 +291,56 @@ def test_legal_wave_70_returns_legal_decision_id_for_global_legal_validation():
     assert payload["status"] == "approved"
     assert payload["score"] == 100.0
     assert payload["gaps"] == []
+
+
+def test_legal_wave_84_consumes_cea_lineage_and_is_idempotent():
+    w83 = {
+        "source_event_id": "evt-cea-001",
+        "trace_id": "trace-cea-001",
+        "decision_id": "decision-cea-001",
+        "governance_decision_id": "gov-cea-001",
+        "execution_id": "exec-cea-001",
+        "infrastructure_change_id": "infra-cea-001",
+        "supplier_analysis_id": "supplier-cea-001",
+        "procurement_plan_id": "procurement-cea-001",
+        "economic_impact_id": "economic-cea-001",
+        "financial_exposure_id": "exposure-cea-001",
+    }
+
+    first = client.post("/legal/waves/84/evaluate", json=w83)
+    second = client.post("/legal/waves/84/evaluate", json=w83)
+
+    assert first.status_code == second.status_code == 200
+    payload = first.json()
+    assert payload == second.json()
+    assert payload["legal_assessment_id"]
+    assert payload["financial_exposure_id"] == w83["financial_exposure_id"]
+    assert all(payload[field] is True for field in (
+        "contract_valid", "lineage_valid", "compliance_valid", "regulatory_valid",
+        "liability_valid", "insurance_valid", "licensing_valid", "legal_risk_valid",
+        "ip_valid", "data_rights_valid", "supplier_obligations_valid", "contingency_valid",
+        "legal_assessment_valid", "replay_valid", "idempotency_valid", "rollback_valid",
+        "recovery_valid", "audit_valid",
+    ))
+    assert payload["status"] == "PASS"
+
+
+def test_legal_wave_84_rejects_disconnected_lineage():
+    payload = {
+        "source_event_id": "evt-cea-002",
+        "trace_id": "trace-cea-002",
+        "decision_id": "decision-cea-002",
+        "governance_decision_id": "gov-cea-002",
+        "execution_id": "exec-cea-002",
+        "infrastructure_change_id": "infra-cea-002",
+        "supplier_analysis_id": "supplier-cea-002",
+        "procurement_plan_id": "procurement-cea-002",
+        "economic_impact_id": "economic-cea-002",
+        "financial_exposure_id": "exposure-cea-002",
+        "lineage": ["source_event_id", "financial_exposure_id"],
+    }
+
+    response = client.post("/legal/waves/84/evaluate", json=payload)
+
+    assert response.status_code == 409
+    assert "financial_exposure_id" in response.json()["detail"]

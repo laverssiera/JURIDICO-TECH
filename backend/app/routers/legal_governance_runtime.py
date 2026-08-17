@@ -107,6 +107,21 @@ class Wave70EvaluationRequest(BaseModel):
     cross_border_obligations: bool | str | dict[str, Any] = False
 
 
+class Wave84EvaluationRequest(BaseModel):
+    source_event_id: str = Field(..., min_length=1)
+    trace_id: str = Field(..., min_length=1)
+    decision_id: str = Field(..., min_length=1)
+    governance_decision_id: str = Field(..., min_length=1)
+    execution_id: str = Field(..., min_length=1)
+    infrastructure_change_id: str = Field(..., min_length=1)
+    supplier_analysis_id: str = Field(..., min_length=1)
+    procurement_plan_id: str = Field(..., min_length=1)
+    economic_impact_id: str = Field(..., min_length=1)
+    financial_exposure_id: str = Field(..., min_length=1)
+    lineage: list[str] | None = None
+    legal_checks: dict[str, bool] = Field(default_factory=dict)
+
+
 @router.post("/legal/contract/generate")
 def legal_contract_generate(request: ContractGenerateRequest) -> dict[str, Any]:
     return _runtime.generate_contract(
@@ -253,6 +268,12 @@ def legal_wave_70() -> dict[str, Any]:
 @router.post("/legal/waves/70/evaluate")
 def evaluate_legal_wave_70(request: Wave70EvaluationRequest) -> dict[str, Any]:
     return _runtime.evaluate_wave_70(request.model_dump())
+
+
+@router.post("/legal/waves/84/validate")
+@router.post("/legal/waves/84/evaluate")
+def evaluate_legal_wave_84(request: Wave84EvaluationRequest) -> dict[str, Any]:
+    return _runtime.evaluate_wave_84(request.model_dump())
 
 
 @router.post("/legal/continental/state")
