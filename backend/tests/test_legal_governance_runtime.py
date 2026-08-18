@@ -1,6 +1,8 @@
 from fastapi.testclient import TestClient
+from uuid import uuid4
 
 from app.main import app
+from app.services.legal_store import legal_core_store
 
 
 client = TestClient(app)
@@ -295,20 +297,63 @@ def test_legal_wave_70_returns_legal_decision_id_for_global_legal_validation():
 
 def test_legal_wave_84_consumes_cea_lineage_and_is_idempotent():
     w83 = {
-        "source_event_id": "evt-cea-001",
+        "source_event_id": f"evt-cea-{uuid4().hex}",
         "trace_id": "trace-cea-001",
         "decision_id": "decision-cea-001",
         "governance_decision_id": "gov-cea-001",
         "execution_id": "exec-cea-001",
-        "infrastructure_change_id": "infra-cea-001",
+        "infrastructure_change_ids": ["infra-cea-001"],
         "supplier_analysis_id": "supplier-cea-001",
         "procurement_plan_id": "procurement-cea-001",
         "economic_impact_id": "economic-cea-001",
         "financial_exposure_id": "exposure-cea-001",
     }
+    audit_events = legal_core_store.load("audit_trail", [])
+    audit_events.append(
+        {
+            "event_id": w83["source_event_id"],
+            "wave": 83,
+            "payload": {
+                **w83,
+                "wave_lineage": [79, 80, 81, 82, 83],
+                "validations": {
+                    "replay": True,
+                    "idempotency": True,
+                    "rollback": True,
+                    "recovery": True,
+                    "audit": True,
+                },
+            },
+        }
+    )
+    legal_core_store.save("audit_trail", audit_events)
 
-    first = client.post("/legal/waves/84/evaluate", json=w83)
-    second = client.post("/legal/waves/84/evaluate", json=w83)
+    first = client.post(
+        "/legal/waves/84/evaluate",
+        json={
+            **w83,
+            "legal_checks": {
+                "contract_valid": True,
+                "compliance_valid": True,
+                "regulatory_valid": True,
+                "liability_valid": True,
+                "insurance_valid": True,
+            },
+        },
+    )
+    second = client.post(
+        "/legal/waves/84/evaluate",
+        json={
+            **w83,
+            "legal_checks": {
+                "contract_valid": True,
+                "compliance_valid": True,
+                "regulatory_valid": True,
+                "liability_valid": True,
+                "insurance_valid": True,
+            },
+        },
+    )
 
     assert first.status_code == second.status_code == 200
     payload = first.json()
@@ -317,12 +362,17 @@ def test_legal_wave_84_consumes_cea_lineage_and_is_idempotent():
     assert payload["financial_exposure_id"] == w83["financial_exposure_id"]
     assert all(payload[field] is True for field in (
         "contract_valid", "lineage_valid", "compliance_valid", "regulatory_valid",
-        "liability_valid", "insurance_valid", "licensing_valid", "legal_risk_valid",
-        "ip_valid", "data_rights_valid", "supplier_obligations_valid", "contingency_valid",
-        "legal_assessment_valid", "replay_valid", "idempotency_valid", "rollback_valid",
-        "recovery_valid", "audit_valid",
+        "liability_valid", "insurance_valid", "replay_valid", "idempotency_valid",
+        "rollback_valid", "recovery_valid", "audit_valid",
     ))
     assert payload["status"] == "PASS"
+    assert any(
+        event.get("wave") == 84
+        and event.get("source_event_id") == w83["source_event_id"]
+        and event.get("trace_id") == w83["trace_id"]
+        and event.get("legal_assessment_id") == payload["legal_assessment_id"]
+        for event in legal_core_store.load("audit_trail", [])
+    )
 
 
 def test_legal_wave_84_rejects_disconnected_lineage():
@@ -332,15 +382,23 @@ def test_legal_wave_84_rejects_disconnected_lineage():
         "decision_id": "decision-cea-002",
         "governance_decision_id": "gov-cea-002",
         "execution_id": "exec-cea-002",
-        "infrastructure_change_id": "infra-cea-002",
+        "infrastructure_change_ids": ["infra-cea-002"],
         "supplier_analysis_id": "supplier-cea-002",
         "procurement_plan_id": "procurement-cea-002",
         "economic_impact_id": "economic-cea-002",
         "financial_exposure_id": "exposure-cea-002",
-        "lineage": ["source_event_id", "financial_exposure_id"],
     }
+    audit_events = legal_core_store.load("audit_trail", [])
+    audit_events.append(
+        {
+            "event_id": payload["source_event_id"],
+            "wave": 83,
+            "payload": {**payload, "wave_lineage": [79, 83]},
+        }
+    )
+    legal_core_store.save("audit_trail", audit_events)
 
     response = client.post("/legal/waves/84/evaluate", json=payload)
 
     assert response.status_code == 409
-    assert "financial_exposure_id" in response.json()["detail"]
+    assert "W79-W83" in response.json()["detail"]

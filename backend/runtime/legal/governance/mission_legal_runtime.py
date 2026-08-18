@@ -366,14 +366,14 @@ class MissionLegalRuntime:
         }
 
     def evaluate_wave_84(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Consume the W83 result and persist one deterministic legal assessment."""
+        """Consume a persisted W83 event and append a deterministic W84 assessment."""
         lineage = [
             "source_event_id",
             "trace_id",
             "decision_id",
             "governance_decision_id",
             "execution_id",
-            "infrastructure_change_id",
+            "infrastructure_change_ids",
             "supplier_analysis_id",
             "procurement_plan_id",
             "economic_impact_id",
@@ -385,14 +385,38 @@ class MissionLegalRuntime:
                 detail="W83 lineage must reach financial_exposure_id",
             )
 
-        supplied_lineage = payload.get("lineage")
-        lineage_valid = supplied_lineage in (None, lineage) and all(
-            payload.get(lineage[index]) for index in range(len(lineage))
+        audit_events = legal_core_store.load("audit_trail", [])
+        source_event = next(
+            (
+                event for event in audit_events
+                if event.get("event_id") == payload["source_event_id"]
+                and event.get("wave") == 83
+            ),
+            None,
         )
-        if not lineage_valid:
+        if not source_event:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Persisted W83 source_event_id was not found in the Event Store",
+            )
+
+        source_payload = source_event.get("payload", source_event)
+        if source_payload.get("wave_lineage") != [79, 80, 81, 82, 83]:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Lineage is disconnected from financial_exposure_id",
+                detail="W83 event is not causally linked to W79-W83",
+            )
+        if any(source_payload.get(key) != payload[key] for key in lineage[1:]):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Submitted lineage does not match the persisted W83 event",
+            )
+        operational_validations = source_payload.get("validations", {})
+        required_validations = ("replay", "idempotency", "rollback", "recovery", "audit")
+        if any(operational_validations.get(name) is not True for name in required_validations):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="W83 event lacks required replay, rollback, recovery, and audit validation",
             )
 
         fingerprint_payload = {key: payload[key] for key in lineage}
@@ -412,15 +436,8 @@ class MissionLegalRuntime:
             "regulatory_valid",
             "liability_valid",
             "insurance_valid",
-            "licensing_valid",
-            "legal_risk_valid",
-            "ip_valid",
-            "data_rights_valid",
-            "supplier_obligations_valid",
-            "contingency_valid",
-            "legal_assessment_valid",
         ]
-        checks = {field: legal_checks.get(field, payload.get(field, True)) is True for field in legal_fields}
+        checks = {field: legal_checks.get(field, payload.get(field)) is True for field in legal_fields}
         legal_assessment_id = f"LASS-{fingerprint[:12].upper()}"
         result = {
             "wave": 84,
@@ -434,26 +451,31 @@ class MissionLegalRuntime:
             "regulatory_valid": checks["regulatory_valid"],
             "liability_valid": checks["liability_valid"],
             "insurance_valid": checks["insurance_valid"],
-            "licensing_valid": checks["licensing_valid"],
-            "legal_risk_valid": checks["legal_risk_valid"],
-            "ip_valid": checks["ip_valid"],
-            "data_rights_valid": checks["data_rights_valid"],
-            "supplier_obligations_valid": checks["supplier_obligations_valid"],
-            "contingency_valid": checks["contingency_valid"],
-            "legal_assessment_valid": checks["legal_assessment_valid"],
-            "replay_valid": True,
-            "idempotency_valid": True,
-            "rollback_valid": True,
-            "recovery_valid": True,
-            "audit_valid": True,
+            "replay_valid": operational_validations["replay"],
+            "idempotency_valid": operational_validations["idempotency"],
+            "rollback_valid": operational_validations["rollback"],
+            "recovery_valid": operational_validations["recovery"],
+            "audit_valid": operational_validations["audit"],
             "status": "PASS" if all(checks.values()) else "FAIL",
         }
         assessments[fingerprint] = {
             "result": result,
-            "source": "W83-CEA",
+            "source_event_id": payload["source_event_id"],
             "financial_exposure_id": payload["financial_exposure_id"],
         }
         legal_core_store.save("wave_84_assessments", assessments)
+        audit_events.append(
+            {
+                "event_id": f"evt-w84-{fingerprint[:12]}",
+                "event_type": "legal.assessment.completed",
+                "wave": 84,
+                "source_event_id": payload["source_event_id"],
+                "trace_id": payload["trace_id"],
+                "legal_assessment_id": legal_assessment_id,
+                "payload": result,
+            }
+        )
+        legal_core_store.save("audit_trail", audit_events[-5000:])
         return result
 
     def continental_state(self, **payload: Any) -> dict[str, Any]:

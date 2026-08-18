@@ -113,12 +113,11 @@ class Wave84EvaluationRequest(BaseModel):
     decision_id: str = Field(..., min_length=1)
     governance_decision_id: str = Field(..., min_length=1)
     execution_id: str = Field(..., min_length=1)
-    infrastructure_change_id: str = Field(..., min_length=1)
+    infrastructure_change_ids: list[str] = Field(..., min_length=1)
     supplier_analysis_id: str = Field(..., min_length=1)
     procurement_plan_id: str = Field(..., min_length=1)
     economic_impact_id: str = Field(..., min_length=1)
     financial_exposure_id: str = Field(..., min_length=1)
-    lineage: list[str] | None = None
     legal_checks: dict[str, bool] = Field(default_factory=dict)
 
 
